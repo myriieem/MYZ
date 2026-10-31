@@ -2,11 +2,225 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Générateur d'idées artistiques!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Générateur d'idée artistique</title>
+
+  <style>
+    /* ===== 1. COULEURS ET POLICE =====
+       Pour changer l'ambiance du site, modifie seulement ces lignes. */
+    :root {
+      --fond: #f6f7ff;          /* fond de la page (blanc bleuté) */
+      --texte: #2a2a5a;         /* couleur du texte (bleu nuit) */
+      --bouton-debut: #bcd7ff;  /* bouton : début du dégradé (bleu) */
+      --bouton-fin: #d6caff;    /* bouton : fin du dégradé (lilas) */
+      --bordure: #a9b6ff;       /* bordure du bouton et du cadre */
+      --halo: rgba(169, 182, 255, 0.8);  /* couleur de la lueur du bouton */
+      --bleu-clair: #e3e6fb;    /* petites lignes de séparation */
+      --bleu-titre: #5560b5;    /* titres des catégories */
+      --blanc: #ffffff;         /* fond du cadre de résultat */
+      --police: Helvetica, Arial, sans-serif;
+    }
+
+    /* ===== 2. LA PAGE ===== */
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      background: var(--fond);
+      color: var(--texte);
+      font-family: var(--police);
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 640px;      /* largeur maximale du contenu */
+      margin: 0 auto;        /* centre le contenu */
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;       /* taille du titre */
+      font-weight: normal;
+      margin: 0 0 28px;
+    }
+
+    /* ===== 3. LE BOUTON ===== */
+    button {
+      font-family: inherit;
+      font-size: 1.1rem;
+      padding: 12px 36px;
+      color: var(--texte);
+      background: linear-gradient(120deg, var(--bouton-debut), var(--bouton-fin));
+      border: 2px solid var(--bordure);
+      border-radius: 999px;  /* bouton tout arrondi ; mets 4px pour un bouton carré */
+      cursor: pointer;
+      animation: respire 2.8s ease-in-out infinite;  /* la lueur : supprime cette ligne pour l'enlever */
+    }
+
+    button:hover {
+      filter: brightness(0.97);
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--texte);
+      outline-offset: 3px;
+    }
+
+    /* La lueur du bouton : elle grossit puis rétrécit en boucle.
+       Pour une lueur plus forte, augmente 22px et 5px. Pour la ralentir, augmente 2.8s (ligne du bouton). */
+    @keyframes respire {
+      0%, 100% { box-shadow: 0 0 6px 0 var(--halo); }
+      50%      { box-shadow: 0 0 22px 5px var(--halo); }
+    }
+
+    /* Pour les personnes qui ont désactivé les animations : la lueur reste fixe */
+    @media (prefers-reduced-motion: reduce) {
+      button {
+        animation: none;
+        box-shadow: 0 0 12px 2px var(--halo);
+      }
+    }
+
+    /* ===== 4. LE CADRE DE RÉSULTAT ===== */
+    #resultat {
+      margin-top: 36px;
+      padding: 8px 24px;
+      background: var(--blanc);
+      border: 1px solid var(--bordure);
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    .bloc {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--bleu-clair);
+    }
+
+    .bloc:last-child {
+      border-bottom: none;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: var(--bleu-titre);
+    }
+
+    .bloc p {
+      margin: 0;
+    }
+
+    #theme {
+      font-size: 1.6rem;
+    }
+
+    /* ===== 5. LES IMAGES ===== */
+    #images {
+      display: flex;
+      flex-wrap: wrap;       /* les images passent à la ligne s'il y en a plusieurs */
+      gap: 12px;
+    }
+
+    #images img {
+      max-width: 100%;
+      max-height: 300px;     /* hauteur maximale d'une image */
+      border: 1px solid var(--bleu-clair);
+      border-radius: 6px;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Générateur d'idées artistiques</h1>
-  <p>Bienvenue sur le générateur d'idées artistiques! Moodboard, prompts d'écriture, et bien plus encore.</p>
+  <main>
+    <h1>Générateur d'idée artistique</h1>
+
+    <button onclick="generer()">Générer</button>
+
+    <!-- Ce cadre est caché au départ, il apparaît au premier clic -->
+    <section id="resultat" hidden>
+      <div class="bloc">
+        <h2>Thème</h2>
+        <p id="theme"></p>
+      </div>
+
+      <div class="bloc">
+        <h2>Références</h2>
+        <div id="images"></div>
+      </div>
+
+      <div class="bloc">
+        <h2>Prompt d'écriture</h2>
+        <p id="prompt"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* ===== 6. TES IDÉES =====
+       Chaque idée est entre accolades { }, avec :
+       - theme  : le nom du thème
+       - images : la liste des images (entre crochets, séparées par des virgules)
+       - prompt : le prompt d'écriture
+       Pour ajouter une idée, copie un bloc entier et ajoute une virgule après son }. */
+    const idees = [
+      {
+        theme: "Steampunk",
+        images: ["images/steampunk.png"],
+        prompt: "en cours"
+      },
+      {
+        theme: "Médiéval",
+        images: ["images/medieval.png"],
+        prompt: "en cours"
+      },
+      {
+        theme: "Cristaux",
+        images: ["images/cristaux.png"],
+        prompt: "en cours"
+      },
+      {
+        theme: "Coquillages & mer",
+        images: ["images/coquillages.png"],
+        prompt: "en cours"
+      },
+      {
+        theme: "Espace",
+        images: ["images/espace.png"],
+        prompt: "en cours"
+      }
+    ];
+
+    /* ===== 7. LE FONCTIONNEMENT =====
+       Cette partie est appelée à chaque clic sur le bouton. */
+    let dernierIndex = -1; // retient la dernière idée pour ne pas la répéter deux fois de suite
+
+    function generer() {
+      // 1. Choisir une idée au hasard (différente de la précédente)
+      let index;
+      do {
+        index = Math.floor(Math.random() * idees.length);
+      } while (index === dernierIndex && idees.length > 1);
+      dernierIndex = index;
+
+      const idee = idees[index];
+
+      // 2. Écrire le thème et le prompt dans la page
+      document.getElementById("theme").textContent = idee.theme;
+      document.getElementById("prompt").textContent = idee.prompt;
+
+      // 3. Vider la zone d'images, puis ajouter toutes les images de l'idée
+      const zoneImages = document.getElementById("images");
+      zoneImages.innerHTML = "";
+
+      for (const chemin of idee.images) {
+        const img = document.createElement("img");
+        img.src = chemin;
+        img.alt = "Référence : " + idee.theme;
+        zoneImages.appendChild(img);
+      }
+
+      // 4. Afficher le cadre de résultat
+      document.getElementById("resultat").hidden = false;
+    }
+  </script>
 </body>
 </html>
